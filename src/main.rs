@@ -12,14 +12,6 @@ use core::panic::PanicInfo;
 #[macro_use]
 mod vga_buffer;
 
-/// This function is called on panic.
-#[panic_implementation]
-#[no_mangle]
-pub fn panic(info: &PanicInfo) -> ! {
-    println!("{}", info);
-    loop {}
-}
-
 #[no_mangle] // don't mangle the name of this function
 pub extern "C" fn _start() -> ! {
     //use core::fmt::Write;
@@ -28,5 +20,13 @@ pub extern "C" fn _start() -> ! {
     println!("Hello World{}", "!");
     panic!("Some panic message");
     
+    loop {}
+}
+
+/// This function is called on panic.
+#[panic_implementation]
+#[no_mangle]
+pub fn panic(info: &PanicInfo) -> ! {
+    println!("{}", info);
     loop {}
 }
