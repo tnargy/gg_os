@@ -7,12 +7,14 @@
 extern crate gg_os;
 
 use core::panic::PanicInfo;
+use gg_os::exit_qemu;
 
 #[cfg(not(test))]  // only compile when test flag is not set
 #[no_mangle] // don't mangle the name of this function
 pub extern "C" fn _start() -> ! {
-    println!("Hello World{}", "!");
-
+    serial_println!("ok");
+    
+    unsafe { exit_qemu(); }
     loop {}
 }
 
@@ -21,6 +23,10 @@ pub extern "C" fn _start() -> ! {
 #[no_mangle]
 /// This function is called on panic.
 pub fn panic(info: &PanicInfo) -> ! {
-    println!("{}", info);
+    serial_println!("failed");
+    
+    serial_println!("{}", info);
+
+    unsafe { exit_qemu(); }
     loop {}
 }
