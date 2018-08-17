@@ -18,10 +18,8 @@ use x86_64::structures::idt::{InterruptDescriptorTable, ExceptionStackFrame};
 pub extern "C" fn _start() -> ! {
     println!("Hello World{}", "!");
 
+    gg_os::gdt::init();
     init_idt();
-
-    // invode a breakpoint exception
-    x86_64::instructions::int3();
 
     println!("It did not crash!");
     loop {}
@@ -41,6 +39,11 @@ lazy_static! {
     static ref IDT: InterruptDescriptorTable  = {
         let mut idt = InterruptDescriptorTable::new();
         idt.breakpoint.set_handler_fn(breakpoint_handler);
+        unsafe {
+            idt.double_fault.set_handler_fn(double_fault_handler)
+                .set_stack_index(gg_os::gdt::DOUBLE_FAULT_IST_INDEX);
+        }
+        
         idt
     };
 }
@@ -55,4 +58,12 @@ extern "x86-interrupt" fn breakpoint_handler(
     stack_frame: &mut ExceptionStackFrame)
 {
     println!("EXCEPTION: BREAKPOINT\n{:#?}", stack_frame);
+}
+
+/// Create Double Fault handler
+extern "x86-interrupt" fn double_fault_handler(
+    stack_frame: &mut ExceptionStackFrame, _error_code: u64)
+{
+    println!("EXCEPTION: DOUBLE FAULT\n{:#?}", stack_frame);
+    loop {}
 }
