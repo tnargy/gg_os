@@ -1,6 +1,6 @@
-use volatile::Volatile;
 use core::fmt;
 use spin::Mutex;
+use volatile::Volatile;
 
 lazy_static! {
     /// A global `Writer` instance that can be used for printing to the VGA text buffer.
@@ -94,7 +94,7 @@ impl Writer {
             }
         }
     }
-    
+
     /// Writes a string to the buffer.  Does **not** support non-ASCII chars.
     pub fn write_string(&mut self, s: &str) {
         for byte in s.bytes() {
@@ -260,7 +260,7 @@ mod test {
                 let screen_char = screen_char.read();
                 if i == BUFFER_HEIGHT - 1 && j == 0 {
                     assert_eq!(screen_char.ascii_char, b' ');
-                    assert_eq!(screen_char.color_code, writer.color_code);                    
+                    assert_eq!(screen_char.color_code, writer.color_code);
                 } else if i == 0 && j == 0 {
                     assert_eq!(screen_char.ascii_char, b'b');
                     assert_eq!(screen_char.color_code, writer.color_code);
@@ -269,6 +269,6 @@ mod test {
                     assert_eq!(screen_char.color_code, writer.color_code);
                 }
             }
-        }                
+        }
     }
 }

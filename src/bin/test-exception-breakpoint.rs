@@ -10,9 +10,9 @@ extern crate x86_64;
 #[macro_use]
 extern crate lazy_static;
 
-use gg_os::exit_qemu;
 use core::panic::PanicInfo;
 use core::sync::atomic::{AtomicUsize, Ordering};
+use gg_os::exit_qemu;
 
 static BREAKPOINT_HANDLER_CALLED: AtomicUsize = AtomicUsize::new(0);
 
@@ -23,7 +23,7 @@ pub extern "C" fn _start() -> ! {
 
     // invoke a breakpoint exception
     x86_64::instructions::int3();
-    
+
     match BREAKPOINT_HANDLER_CALLED.load(Ordering::SeqCst) {
         1 => serial_println!("ok"),
         0 => {

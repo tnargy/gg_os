@@ -10,8 +10,8 @@ extern crate x86_64;
 #[macro_use]
 extern crate lazy_static;
 
-use gg_os::exit_qemu;
 use core::panic::PanicInfo;
+use gg_os::exit_qemu;
 
 #[cfg(not(test))]
 #[no_mangle]
@@ -24,10 +24,10 @@ pub extern "C" fn _start() -> ! {
         stack_overflow();
     }
     stack_overflow();
-    
+
     serial_println!("failed");
     serial_println!("No exceptions occured");
-    
+
     unsafe {
         exit_qemu();
     }
@@ -60,7 +60,7 @@ lazy_static! {
                 .set_handler_fn(double_fault_handler)
                 .set_stack_index(gg_os::gdt::DOUBLE_FAULT_IST_INDEX);
         }
-        
+
         idt
     };
 }

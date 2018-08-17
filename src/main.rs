@@ -11,9 +11,9 @@ extern crate x86_64;
 extern crate lazy_static;
 
 use core::panic::PanicInfo;
-use x86_64::structures::idt::{InterruptDescriptorTable, ExceptionStackFrame};
-    
-#[cfg(not(test))]  // only compile when test flag is not set
+use x86_64::structures::idt::{ExceptionStackFrame, InterruptDescriptorTable};
+
+#[cfg(not(test))] // only compile when test flag is not set
 #[no_mangle] // don't mangle the name of this function
 pub extern "C" fn _start() -> ! {
     println!("Hello World{}", "!");
@@ -25,7 +25,7 @@ pub extern "C" fn _start() -> ! {
     loop {}
 }
 
-#[cfg(not(test))]  // only compile when test flag is not set
+#[cfg(not(test))] // only compile when test flag is not set
 #[panic_implementation]
 #[no_mangle]
 /// This function is called on panic.
@@ -36,14 +36,15 @@ pub fn panic(info: &PanicInfo) -> ! {
 
 /// Create Interrupt Description Table
 lazy_static! {
-    static ref IDT: InterruptDescriptorTable  = {
+    static ref IDT: InterruptDescriptorTable = {
         let mut idt = InterruptDescriptorTable::new();
         idt.breakpoint.set_handler_fn(breakpoint_handler);
         unsafe {
-            idt.double_fault.set_handler_fn(double_fault_handler)
+            idt.double_fault
+                .set_handler_fn(double_fault_handler)
                 .set_stack_index(gg_os::gdt::DOUBLE_FAULT_IST_INDEX);
         }
-        
+
         idt
     };
 }
@@ -54,16 +55,15 @@ pub fn init_idt() {
 }
 
 /// Create Exception Breakpoint handler
-extern "x86-interrupt" fn breakpoint_handler(
-    stack_frame: &mut ExceptionStackFrame)
-{
+extern "x86-interrupt" fn breakpoint_handler(stack_frame: &mut ExceptionStackFrame) {
     println!("EXCEPTION: BREAKPOINT\n{:#?}", stack_frame);
 }
 
 /// Create Double Fault handler
 extern "x86-interrupt" fn double_fault_handler(
-    stack_frame: &mut ExceptionStackFrame, _error_code: u64)
-{
+    stack_frame: &mut ExceptionStackFrame,
+    _error_code: u64,
+) {
     println!("EXCEPTION: DOUBLE FAULT\n{:#?}", stack_frame);
     loop {}
 }
