@@ -7,6 +7,7 @@ extern crate volatile;
 extern crate lazy_static;
 extern crate uart_16550;
 extern crate x86_64;
+extern crate pic8259_simple;
 
 #[cfg(test)]
 extern crate array_init;
@@ -17,6 +18,7 @@ extern crate std;
 pub mod gdt;
 pub mod serial;
 pub mod vga_buffer;
+pub mod interrupts;
 
 pub unsafe fn exit_qemu() {
     use x86_64::instructions::port::Port;
