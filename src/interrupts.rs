@@ -9,3 +9,4 @@ pub static PICS: spin::Mutex<ChainedPics> =
 
 // Hardware Timer uses line 0 of master PIC
 pub const TIMER_INTERRUPT_ID: u8 = PIC_1_OFFSET;
+pub const KEYBOARD_INTERRUPT_ID: u8 = TIMER_INTERRUPT_ID + 1;

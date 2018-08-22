@@ -23,8 +23,6 @@ pub extern "C" fn _start() -> ! {
     unsafe { gg_os::interrupts::PICS.lock().initialize() };
     x86_64::instructions::interrupts::enable();
 
-    x86_64::instructions::int3();
-    
     println!("It did not crash!");
     loop {}
 }
@@ -49,8 +47,11 @@ lazy_static! {
                 .set_stack_index(gg_os::gdt::DOUBLE_FAULT_IST_INDEX);
         }
         let timer_interrupt_id = usize::from(gg_os::interrupts::TIMER_INTERRUPT_ID);
+        let keyboard_interrupt_id = usize::from(gg_os::interrupts::KEYBOARD_INTERRUPT_ID);
+        
         idt[timer_interrupt_id].set_handler_fn(timer_interrupt_handler);
-            
+        idt[keyboard_interrupt_id].set_handler_fn(keyboard_interrupt_handler);
+        
         idt
     };
 }
@@ -72,6 +73,23 @@ extern "x86-interrupt" fn timer_interrupt_handler(
     // PIC expects an explicit "end of interrupt" (EOI) signal
     unsafe { gg_os::interrupts::PICS.lock().notify_end_of_interrupt(
         gg_os::interrupts::TIMER_INTERRUPT_ID) }
+}
+
+/// Create Keyboard Interrupt handler
+extern "x86-interrupt" fn keyboard_interrupt_handler(
+    _stack_frame: &mut ExceptionStackFrame)
+{
+    if let Some(input) = gg_os::keyboard::read_char() {
+        if input == '\r' {
+            println!("");
+        } else {
+            print!("{}", input);
+        }
+    }
+    
+    // PIC expects an explicit "end of interrupt" (EOI) signal
+    unsafe { gg_os::interrupts::PICS.lock().notify_end_of_interrupt(
+        gg_os::interrupts::KEYBOARD_INTERRUPT_ID) }
 }
 
 /// Create Double Fault handler
