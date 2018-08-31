@@ -3,9 +3,6 @@ name = "gg_os"
 version = "0.1.0"
 authors = ["ggandy"]
 
-[dev-dependencies]
-array-init = "0.0.3"
-
 [dependencies]
 bootloader_precompiled = "0.2.0"
 volatile = "0.2.3"

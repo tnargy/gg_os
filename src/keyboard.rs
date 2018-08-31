@@ -12,7 +12,10 @@ struct KeyPair {
 impl KeyPair {
     // Creates new KeyPair with false values
     const fn new() -> Self {
-        KeyPair { left: false, right: false }
+        KeyPair {
+            left: false,
+            right: false,
+        }
     }
     // Check if either is true
     fn is_pressed(&self) -> bool {
@@ -69,7 +72,7 @@ impl Modifiers {
             0xB6 => self.shift.right = false,
             0xB8 => self.alt.left = false,
 
-            _ => {},
+            _ => {}
         }
     }
 }
@@ -89,10 +92,10 @@ static STATE: Mutex<State> = Mutex::new(State {
 fn find_asii(scancode: u8) -> Option<u8> {
     let index = scancode as usize;
     match scancode {
-        0x01 ... 0x0E => Some(b"\x1B1234567890-=\0x02"[index-0x01]),
-        0x0F ... 0x1C => Some(b"\tqwertyuiop[]\r"[index-0x0F]),
-        0x1E ... 0x28 => Some(b"asdfghjkl;'"[index-0x1E]),
-        0x2C ... 0x35 => Some(b"zxcvbnm,./"[index-0x2C]),
+        0x01...0x0E => Some(b"\x1B1234567890-=\0x02"[index - 0x01]),
+        0x0F...0x1C => Some(b"\tqwertyuiop[]\r"[index - 0x0F]),
+        0x1E...0x28 => Some(b"asdfghjkl;'"[index - 0x1E]),
+        0x2C...0x35 => Some(b"zxcvbnm,./"[index - 0x2C]),
         0x39 => Some(b' '),
         _ => None,
     }
