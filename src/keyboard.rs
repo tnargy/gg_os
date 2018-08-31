@@ -53,6 +53,34 @@ impl Modifiers {
             if self.use_uppercase_letters() {
                 return ascii - b'a' + b'A';
             }
+        } else {
+            if self.shift.is_pressed() {
+                match ascii {
+                    b'1' => return ascii - b'1' + b'!',
+                    b'2' => return ascii - b'2' + b'@',
+                    b'3' => return ascii - b'3' + b'#',
+                    b'4' => return ascii - b'4' + b'$',
+                    b'5' => return ascii - b'5' + b'%',
+                    b'6' => return ascii - b'6' + b'^',
+                    b'7' => return ascii - b'7' + b'&',
+                    b'8' => return ascii - b'8' + b'*',
+                    b'9' => return ascii - b'9' + b'(',
+                    b'0' => return ascii - b'0' + b')',
+                    b'-' => return ascii - b'-' + b'_',
+                    b'=' => return ascii - b'=' + b'+',
+                    b',' => return ascii - b',' + b'<',
+                    b'.' => return ascii - b'.' + b'>',
+                    b'/' => return ascii - b'/' + b'?',
+                    b'[' => return ascii - b'[' + b'{',
+                    b']' => return ascii - b']' + b'}',
+                    b';' => return ascii - b';' + b':',
+                    b'\'' => return ascii - b'\'' + b'"',
+
+                    _ => {}
+                }
+            } else {
+                return ascii;
+            }
         }
 
         ascii
