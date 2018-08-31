@@ -112,6 +112,12 @@ extern "x86-interrupt" fn keyboard_interrupt_handler(_stack_frame: &mut Exceptio
     if let Some(input) = keyboard::read_char() {
         if input == '\r' {
             println!("");
+        } else if input == '\t' {
+            print!("    ");
+        } else if input as usize == 0x0E {
+            // TODO Backspace
+        } else if input as usize == 0x01 {
+            // TODO ESC
         } else {
             print!("{}", input);
         }
