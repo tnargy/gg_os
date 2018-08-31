@@ -163,3 +163,12 @@ pub fn clear_screen() {
         println!("");
     }
 }
+
+pub fn backspace() {
+    if WRITER.lock().column_position > 0 {
+        use core::fmt::Write;
+        WRITER.lock().column_position -= 1;
+        WRITER.lock().write_str(" ").unwrap();
+        WRITER.lock().column_position -= 1;
+    }
+}

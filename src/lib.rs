@@ -114,9 +114,9 @@ extern "x86-interrupt" fn keyboard_interrupt_handler(_stack_frame: &mut Exceptio
             println!("");
         } else if input == '\t' {
             print!("    ");
-        } else if input as usize == 0x0E {
-            // TODO Backspace
-        } else if input as usize == 0x01 {
+        } else if input as usize == 0 {
+            vga_buffer::backspace();
+        } else if input as usize == 27 {
             // TODO ESC
         } else {
             print!("{}", input);

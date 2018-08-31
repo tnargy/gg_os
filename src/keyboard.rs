@@ -122,7 +122,7 @@ static STATE: Mutex<State> = Mutex::new(State {
 fn find_asii(scancode: u8) -> Option<u8> {
     let index = scancode as usize;
     match scancode {
-        0x02...0x0D => Some(b"\x1B1234567890-=\0x02"[index - 0x02]),
+        0x01...0x0E => Some(b"\x1B1234567890-=\0x02"[index - 0x01]),
         0x0F...0x1C => Some(b"\tqwertyuiop[]\r"[index - 0x0F]),
         0x1E...0x29 => Some(b"asdfghjkl;'`"[index - 0x1E]),
         0x2B...0x35 => Some(b"\\zxcvbnm,./"[index - 0x2B]),
