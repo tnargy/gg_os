@@ -21,6 +21,12 @@ clean:
 run: $(iso)
 	@qemu-system-x86_64 -cdrom $(iso)
 
+debug: $(iso)
+	@qemu-system-x86_64 -s -S -cdrom $(iso) -serial mon:stdio
+
+gdb:
+	@rust-gdb "build/kernel-x86_64.bin" -ex "target remote :1234"
+
 iso: $(iso)
 
 $(iso): $(kernel) $(grub_cfg)

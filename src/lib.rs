@@ -2,6 +2,7 @@
 #![feature(abi_x86_interrupt)] // required for defining the x86-interrupts
 #![no_std] // don't link the Rust standard library
 #![feature(const_fn)]
+#![feature(ptr_internals)]
 
 extern crate spin;
 extern crate volatile;
@@ -12,19 +13,27 @@ extern crate multiboot2;
 extern crate pic8259_simple;
 extern crate uart_16550;
 extern crate x86_64;
+#[macro_use]
+extern crate bitflags;
 
 use core::panic::PanicInfo;
 use x86_64::structures::idt::{ExceptionStackFrame, InterruptDescriptorTable};
 
 mod gdt;
-//mod serial;
 #[macro_use]
 mod vga_buffer;
 mod interrupts;
 mod keyboard;
+#[macro_use]
+mod serial;
+mod memory;
 
 #[no_mangle] // don't mangle the name of this function
 pub extern "C" fn rust_main(multiboot_information_address: usize) {
+    use memory::FrameAllocator;
+    // use x86_64::instructions::tlb;
+    // use x86_64::VirtualAddress;
+
     gdt::init();
     init_idt();
     unsafe { interrupts::PICS.lock().initialize() };
@@ -60,6 +69,34 @@ pub extern "C" fn rust_main(multiboot_information_address: usize) {
             section.size(),
             section.flags()
         );
+    }
+
+    let kernel_start = elf_sections_tag
+        .sections()
+        .map(|s| s.start_address())
+        .min()
+        .unwrap();
+    let kernel_end = elf_sections_tag
+        .sections()
+        .map(|s| s.start_address() + s.size())
+        .max()
+        .unwrap();
+    let multiboot_start = multiboot_information_address;
+    let multiboot_end = multiboot_start + (boot_info.total_size() as usize);
+
+    let mut frame_allocator = memory::AreaFrameAllocator::new(
+        kernel_start as usize,
+        kernel_end as usize,
+        multiboot_start,
+        multiboot_end,
+        memory_map_tag.memory_areas(),
+    );
+
+    for i in 0.. {
+        if let None = frame_allocator.allocate_frame() {
+            println!("allocated {} frames", i);
+            break;
+        }
     }
 
     println!("READY!");

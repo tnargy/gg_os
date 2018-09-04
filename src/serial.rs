@@ -9,6 +9,7 @@ lazy_static! {
     };
 }
 
+#[allow(dead_code)]
 pub fn print(args: ::core::fmt::Arguments) {
     use core::fmt::Write;
     SERIAL1
