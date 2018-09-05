@@ -1,4 +1,5 @@
 use memory::Frame;
+use multiboot2::*;
 
 pub struct Entry(u64);
 
@@ -16,7 +17,7 @@ impl Entry {
     }
 
     pub fn pointed_frame(&self) -> Option<Frame> {
-        if self.flags().contains(PRESENT) {
+        if self.flags().contains(EntryFlags::PRESENT) {
             Some(Frame::containing_address(
                 self.0 as usize & 0x000fffff_fffff000,
             ))
@@ -31,17 +32,35 @@ impl Entry {
     }
 }
 
+impl EntryFlags {
+    pub fn from_elf_section_flags(section: &ElfSection) -> EntryFlags {
+        let mut flags = EntryFlags::empty();
+
+        if section.flags().contains(ElfSectionFlags::ALLOCATED) {
+            flags = flags | EntryFlags::PRESENT;
+        }
+        if section.flags().contains(ElfSectionFlags::WRITABLE) {
+            flags = flags | EntryFlags::WRITABLE;
+        }
+        if !section.flags().contains(ElfSectionFlags::EXECUTABLE) {
+            flags = flags | EntryFlags::NO_EXECUTE;
+        }
+
+        flags
+    }
+}
+
 bitflags! {
-    pub flags EntryFlags: u64 {
-        const PRESENT =         1 << 0,
-        const WRITABLE =        1 << 1,
-        const USER_ACCESSIBLE = 1 << 2,
-        const WRITE_THROUGH =   1 << 3,
-        const NO_CACHE =        1 << 4,
-        const ACCESSED =        1 << 5,
-        const DIRTY =           1 << 6,
-        const HUGE_PAGE =       1 << 7,
-        const GLOBAL =          1 << 8,
-        const NO_EXECUTE =      1 << 63,
+    pub struct EntryFlags: u64 {
+        const PRESENT =         1 << 0;
+        const WRITABLE =        1 << 1;
+        const USER_ACCESSIBLE = 1 << 2;
+        const WRITE_THROUGH =   1 << 3;
+        const NO_CACHE =        1 << 4;
+        const ACCESSED =        1 << 5;
+        const DIRTY =           1 << 6;
+        const HUGE_PAGE =       1 << 7;
+        const GLOBAL =          1 << 8;
+        const NO_EXECUTE =      1 << 63;
     }
 }

@@ -17,6 +17,7 @@ extern crate x86_64;
 extern crate bitflags;
 
 use core::panic::PanicInfo;
+use memory::FrameAllocator;
 use x86_64::structures::idt::{ExceptionStackFrame, InterruptDescriptorTable};
 
 mod gdt;
@@ -30,10 +31,6 @@ mod memory;
 
 #[no_mangle] // don't mangle the name of this function
 pub extern "C" fn rust_main(multiboot_information_address: usize) {
-    use memory::FrameAllocator;
-    // use x86_64::instructions::tlb;
-    // use x86_64::VirtualAddress;
-
     gdt::init();
     init_idt();
     unsafe { interrupts::PICS.lock().initialize() };
@@ -92,12 +89,9 @@ pub extern "C" fn rust_main(multiboot_information_address: usize) {
         memory_map_tag.memory_areas(),
     );
 
-    for i in 0.. {
-        if let None = frame_allocator.allocate_frame() {
-            println!("allocated {} frames", i);
-            break;
-        }
-    }
+    enable_nxe_bit();
+    enable_write_protect_bit();
+    memory::remap_the_kernel(&mut frame_allocator, &boot_info);
 
     println!("READY!");
 
@@ -175,6 +169,20 @@ extern "x86-interrupt" fn double_fault_handler(
 ) {
     println!("EXCEPTION: DOUBLE FAULT\n{:#?}", stack_frame);
     loop {}
+}
+
+fn enable_nxe_bit() {
+    use x86_64::registers::model_specific::*;
+    unsafe {
+        Efer::write(Efer::read() | EferFlags::NO_EXECUTE_ENABLE);
+    }
+}
+
+fn enable_write_protect_bit() {
+    use x86_64::registers::control::*;
+    unsafe {
+        Cr0::write(Cr0::read() | Cr0Flags::WRITE_PROTECT);
+    }
 }
 
 pub unsafe fn exit_qemu() {
