@@ -17,7 +17,6 @@ extern crate x86_64;
 extern crate bitflags;
 
 use core::panic::PanicInfo;
-use memory::FrameAllocator;
 use x86_64::structures::idt::{ExceptionStackFrame, InterruptDescriptorTable};
 
 mod gdt;
