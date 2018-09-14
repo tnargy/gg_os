@@ -1,8 +1,9 @@
 #![feature(panic_implementation)] // required for defining the panic handler
 #![feature(abi_x86_interrupt)] // required for defining the x86-interrupts
-#![no_std] // don't link the Rust standard library
 #![feature(const_fn)]
 #![feature(ptr_internals)]
+#![feature(alloc, allocator_api, alloc_error_handler)]
+#![no_std] // don't link the Rust standard library
 
 extern crate spin;
 extern crate volatile;
@@ -15,9 +16,15 @@ extern crate uart_16550;
 extern crate x86_64;
 #[macro_use]
 extern crate bitflags;
+extern crate alloc;
+#[macro_use]
+extern crate once;
+extern crate rlibc;
+extern crate linked_list_allocator;
 
 use core::panic::PanicInfo;
 use x86_64::structures::idt::{ExceptionStackFrame, InterruptDescriptorTable};
+use linked_list_allocator::LockedHeap;
 
 mod gdt;
 #[macro_use]
@@ -28,6 +35,12 @@ mod keyboard;
 mod serial;
 mod memory;
 
+pub const HEAP_START: usize = 0o_000_001_000_000_0000;
+pub const HEAP_SIZE: usize = 100 * 1024; // 100 KiB
+
+#[global_allocator]
+static HEAP_ALLOCATOR: LockedHeap = LockedHeap::empty();
+
 #[no_mangle] // don't mangle the name of this function
 pub extern "C" fn rust_main(multiboot_information_address: usize) {
     gdt::init();
@@ -36,62 +49,39 @@ pub extern "C" fn rust_main(multiboot_information_address: usize) {
     x86_64::instructions::interrupts::enable();
 
     vga_buffer::clear_screen();
-    println!("Booting Kernel...");
 
     // Get boot info from multiboot / GRUB
     let boot_info = unsafe { multiboot2::load(multiboot_information_address) };
 
-    // Read Memory from BIOS
-    let memory_map_tag = boot_info.memory_map_tag().expect("Memory map tag required");
-    println!("Memory Areas:");
-    for area in memory_map_tag.memory_areas() {
-        println!(
-            "    start: 0x{:x}, end: 0x{:x}, length: 0x{:x}",
-            area.start_address(),
-            area.end_address(),
-            area.size()
-        );
-    }
-
-    // Read Elf Sections from Kernel
-    let elf_sections_tag = boot_info
-        .elf_sections_tag()
-        .expect("Elf-sections tag required");
-    println!("Kernel Sections:");
-    for section in elf_sections_tag.sections() {
-        println!(
-            "    addr: 0x{:x}, size: 0x{:x}, flags 0x{:x}",
-            section.start_address(),
-            section.size(),
-            section.flags()
-        );
-    }
-
-    let kernel_start = elf_sections_tag
-        .sections()
-        .map(|s| s.start_address())
-        .min()
-        .unwrap();
-    let kernel_end = elf_sections_tag
-        .sections()
-        .map(|s| s.start_address() + s.size())
-        .max()
-        .unwrap();
-    let multiboot_start = multiboot_information_address;
-    let multiboot_end = multiboot_start + (boot_info.total_size() as usize);
-
-    let mut frame_allocator = memory::AreaFrameAllocator::new(
-        kernel_start as usize,
-        kernel_end as usize,
-        multiboot_start,
-        multiboot_end,
-        memory_map_tag.memory_areas(),
-    );
-
     enable_nxe_bit();
     enable_write_protect_bit();
-    memory::remap_the_kernel(&mut frame_allocator, &boot_info);
 
+    // setup guard page and map the heap pages
+    memory::init(&boot_info);
+
+    // init the heap allocator
+    unsafe {
+        HEAP_ALLOCATOR.lock().init(HEAP_START, HEAP_START + HEAP_SIZE);
+    }
+    
+    use alloc::boxed::Box;
+    let mut heap_test = Box::new(42);
+    *heap_test -= 15;
+    let heap_test2 = Box::new("hello");
+    println!("{:?} {:?}", heap_test, heap_test2);
+
+    use alloc::*;
+    let mut vec_test = vec![1,2,3,4,5,6,7];
+    vec_test[3] = 42;
+    for i in &vec_test {
+        print!("{} ", i);
+    }
+    println!();
+
+    for i in 0..10000 {
+        format!("Some String");
+    }
+    
     println!("READY!");
 
     loop {}
@@ -164,9 +154,9 @@ extern "x86-interrupt" fn keyboard_interrupt_handler(_stack_frame: &mut Exceptio
 /// Create Double Fault handler
 extern "x86-interrupt" fn double_fault_handler(
     stack_frame: &mut ExceptionStackFrame,
-    _error_code: u64,
+    error_code: u64,
 ) {
-    println!("EXCEPTION: DOUBLE FAULT\n{:#?}", stack_frame);
+    println!("EXCEPTION: DOUBLE FAULT {}\n{:#?}", error_code, stack_frame);
     loop {}
 }
 
@@ -197,4 +187,10 @@ pub unsafe fn exit_qemu() {
 pub fn panic(info: &PanicInfo) -> ! {
     println!("{}", info);
     loop {}
+}
+
+#[alloc_error_handler]
+#[no_mangle]
+pub fn oom(layout: core::alloc::Layout) -> ! {
+    panic!("Out of memory: {:?}", layout);
 }
